@@ -616,6 +616,31 @@ BTN_HELP = "❓ Помощь"
 
 # Ссылка на поддержку (без @)
 SUPPORT_USERNAME = "maxtokensupp"
+
+
+WORK_MODE = True
+
+def _admin_panel_kb() -> InlineKeyboardMarkup:
+    rows = [
+        [
+            InlineKeyboardButton("📊 Статистика", callback_data="admin:stats"),
+            InlineKeyboardButton("👥 Пользователи", callback_data="admin:users"),
+        ],
+        [
+            InlineKeyboardButton("🔌 Прокси", callback_data="admin:proxies"),
+            InlineKeyboardButton("💵 Прайс", callback_data="admin:price"),
+        ],
+        [
+            InlineKeyboardButton("📢 Рассылка", callback_data="admin:broadcast"),
+            InlineKeyboardButton("⚙️ Настройки", callback_data="admin:settings"),
+        ],
+        [
+            InlineKeyboardButton("🔘 ВКЛ/ВЫКЛ WORK", callback_data="admin:work"),
+        ],
+    ]
+    return InlineKeyboardMarkup(rows)
+
+
 SUPPORT_LINK = f"https://t.me/{SUPPORT_USERNAME}"
 
 # Лимит длины одного сообщения в Telegram
@@ -779,21 +804,46 @@ def _main_keyboard() -> ReplyKeyboardMarkup:
 
 def _welcome_text() -> str:
     return (
-        "🔐 <b>MAX TOKEN BOT</b>\n\n"
-        "Перенос сессии Max в txt формат, для входа в браузере.\n\n"
-        "━━━━━━━━━━━━━━\n"
+        "🔐 <b>FAST MAX BOT</b>
+
+"
+        "Сдача номеров MAX нерегов!
+
+"
+        "━━━━━━━━━━━━━━
+"
         "👇 <b>Выберите действие:</b>"
     )
 
 
+
 async def _welcome_caption_html(user_id: int) -> str:
-    """Текст приветствия с балансом в USD."""
     cents = await get_balance_cents(user_id)
     usd = cents / 100.0
+
+    numbers = 0
+    try:
+        numbers = await get_user_tokens_count(user_id, only_unused=False)
+    except Exception:
+        pass
+
+    price = 0.0
+    try:
+        price = (await _token_creation_price_cents()) / 100.0
+    except Exception:
+        pass
+
     return (
         _welcome_text()
-        + f"\n\n💰 <b>Баланс:</b> ${usd:.2f} USD"
+        + f"
+
+💰 <b>Баланс:</b> ${usd:.2f} USD"
+        + f"
+📊 <b>Сдано номеров:</b> {numbers}"
+        + f"
+📌 <b>Прайс на сдачу:</b> ${price:.1f}"
     )
+
 
 
 def _format_usd(cents: int) -> str:
@@ -1060,9 +1110,7 @@ def _help_guide_text() -> str:
 
 
 def _menu_inline_kb(show_admin: bool = False) -> InlineKeyboardMarkup:
-    """Новое инлайн-меню."""
-    support_link = SUPPORT_LINK
-
+    """Новое меню."""
     rows = [
         [
             InlineKeyboardButton("📱 По номеру", callback_data="menu:phone"),
@@ -1073,7 +1121,7 @@ def _menu_inline_kb(show_admin: bool = False) -> InlineKeyboardMarkup:
             InlineKeyboardButton("❓ Помощь", callback_data="menu:help"),
         ],
         [
-            InlineKeyboardButton("🆘 Поддержка", url=support_link),
+            InlineKeyboardButton("🆘 Поддержка", url=SUPPORT_LINK),
         ],
     ]
 
@@ -1083,6 +1131,7 @@ def _menu_inline_kb(show_admin: bool = False) -> InlineKeyboardMarkup:
         ])
 
     return InlineKeyboardMarkup(rows)
+
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -3669,3 +3718,65 @@ async def safe_replace_database(document, temp_name: str = "bot_new.db", target_
         conn.close()
 
     os.replace(temp_name, target_name)
+
+
+async def handle_admin_inline_callbacks(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    if not query:
+        return
+
+    data = query.data or ""
+
+    if not data.startswith("admin:"):
+        return
+
+    await query.answer()
+
+    sub = data.split(":", 1)[1]
+
+    if sub == "stats":
+        await query.edit_message_text(
+            "📊 Статистика бота",
+            reply_markup=_admin_panel_kb(),
+        )
+
+    elif sub == "users":
+        await query.edit_message_text(
+            "👥 Пользователи",
+            reply_markup=_admin_panel_kb(),
+        )
+
+    elif sub == "proxies":
+        await query.edit_message_text(
+            "🔌 Прокси",
+            reply_markup=_admin_panel_kb(),
+        )
+
+    elif sub == "price":
+        await query.edit_message_text(
+            "💵 Настройка прайса",
+            reply_markup=_admin_panel_kb(),
+        )
+
+    elif sub == "broadcast":
+        await query.edit_message_text(
+            "📢 Рассылка",
+            reply_markup=_admin_panel_kb(),
+        )
+
+    elif sub == "settings":
+        await query.edit_message_text(
+            "⚙️ Настройки",
+            reply_markup=_admin_panel_kb(),
+        )
+
+    elif sub == "work":
+        global WORK_MODE
+        WORK_MODE = not WORK_MODE
+
+        status = "✅ ВКЛ" if WORK_MODE else "❌ ВЫКЛ"
+
+        await query.edit_message_text(
+            f"WORK MODE: {status}",
+            reply_markup=_admin_panel_kb(),
+        )
