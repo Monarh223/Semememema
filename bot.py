@@ -774,14 +774,8 @@ async def _admin_delete_proxy(update: Update, target: str) -> None:
 
 
 def _main_keyboard() -> ReplyKeyboardMarkup:
-    """Кнопки меню и помощи."""
-    return ReplyKeyboardMarkup(
-        [
-            [KeyboardButton("📋 Меню"), KeyboardButton("❓ Помощь")],
-        ],
-        resize_keyboard=True,
-    )
-
+    """Пустая reply-клавиатура для совместимости."""
+    return ReplyKeyboardMarkup([[]], resize_keyboard=True)
 
 def _welcome_text() -> str:
     return (
@@ -1066,33 +1060,28 @@ def _help_guide_text() -> str:
 
 
 def _menu_inline_kb(show_admin: bool = False) -> InlineKeyboardMarkup:
-    """Инлайн-кнопки главного меню."""
+    """Новое инлайн-меню."""
+    support_link = SUPPORT_LINK
+
     rows = [
         [
-            InlineKeyboardButton("📞 По номеру", callback_data="menu:phone"),
-            InlineKeyboardButton("📱 QR-код", callback_data="menu:qr"),
-        ],
-        [
-            InlineKeyboardButton("🎁 Мои токены", callback_data="menu:tokens"),
+            InlineKeyboardButton("📱 По номеру", callback_data="menu:phone"),
+            InlineKeyboardButton("📂 Мои номера", callback_data="menu:tokens"),
         ],
         [
             InlineKeyboardButton("💰 Баланс", callback_data="menu:balance"),
-            *(
-                [InlineKeyboardButton("💳 Пополнить", callback_data="menu:deposit")]
-                if is_cryptopay_configured()
-                else []
-            ),
-        ],
-        [
             InlineKeyboardButton("❓ Помощь", callback_data="menu:help"),
-            InlineKeyboardButton("↻ Обновить меню", callback_data="menu:refresh"),
         ],
         [
-            InlineKeyboardButton("💬 Поддержка", url=SUPPORT_LINK),
+            InlineKeyboardButton("🆘 Поддержка", url=support_link),
         ],
     ]
+
     if show_admin:
-        rows.append([InlineKeyboardButton("⚙️ Админ-панель", callback_data="menu:admin")])
+        rows.append([
+            InlineKeyboardButton("⚙️ Админ-панель", callback_data="menu:admin")
+        ])
+
     return InlineKeyboardMarkup(rows)
 
 
@@ -1183,7 +1172,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             parse_mode="HTML",
             reply_markup=_menu_inline_kb(show_admin),
         )
-    await update.message.reply_text("Нажмите «📋 Меню» внизу, чтобы открыть меню снова.", reply_markup=_main_keyboard())
+
 
 
 async def cmd_addsupport(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -3656,3 +3645,27 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+# SAFE_DB_UPLOAD_PATCH
+
+async def safe_replace_database(document, temp_name: str = "bot_new.db", target_name: str = "bot.db"):
+    """
+    Безопасная замена SQLite БД:
+    - скачивание во временный файл
+    - integrity_check
+    - атомарная замена
+    """
+    import sqlite3
+    import os
+
+    await document.get_file().download_to_drive(temp_name)
+
+    conn = sqlite3.connect(temp_name)
+    try:
+        result = conn.execute("PRAGMA integrity_check").fetchone()
+        if not result or result[0] != "ok":
+            raise RuntimeError("SQLite integrity_check failed")
+    finally:
+        conn.close()
+
+    os.replace(temp_name, target_name)
