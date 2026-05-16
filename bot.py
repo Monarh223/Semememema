@@ -579,6 +579,30 @@ def _start_qr_flow(
     return qr_flow_id
 
 
+
+
+WORK_MODE = True
+
+def _admin_panel_kb() -> InlineKeyboardMarkup:
+    rows = [
+        [
+            InlineKeyboardButton("📊 Статистика", callback_data="admin:stats"),
+            InlineKeyboardButton("👥 Пользователи", callback_data="admin:users"),
+        ],
+        [
+            InlineKeyboardButton("🔌 Прокси", callback_data="admin:proxies"),
+            InlineKeyboardButton("💵 Прайс", callback_data="admin:price"),
+        ],
+        [
+            InlineKeyboardButton("📢 Рассылка", callback_data="admin:broadcast"),
+            InlineKeyboardButton("⚙️ Настройки", callback_data="admin:settings"),
+        ],
+        [
+            InlineKeyboardButton("🔘 ВКЛ/ВЫКЛ WORK", callback_data="admin:work"),
+        ],
+    ]
+    return InlineKeyboardMarkup(rows)
+
 ACCESS_DENIED = "Доступ запрещён. Ожидайте одобрения администратора."
 
 # Контекст «чат для ответа» и «кому зачислять токены» (в группе-саппорте — владельцу)
@@ -616,31 +640,6 @@ BTN_HELP = "❓ Помощь"
 
 # Ссылка на поддержку (без @)
 SUPPORT_USERNAME = "maxtokensupp"
-
-
-WORK_MODE = True
-
-def _admin_panel_kb() -> InlineKeyboardMarkup:
-    rows = [
-        [
-            InlineKeyboardButton("📊 Статистика", callback_data="admin:stats"),
-            InlineKeyboardButton("👥 Пользователи", callback_data="admin:users"),
-        ],
-        [
-            InlineKeyboardButton("🔌 Прокси", callback_data="admin:proxies"),
-            InlineKeyboardButton("💵 Прайс", callback_data="admin:price"),
-        ],
-        [
-            InlineKeyboardButton("📢 Рассылка", callback_data="admin:broadcast"),
-            InlineKeyboardButton("⚙️ Настройки", callback_data="admin:settings"),
-        ],
-        [
-            InlineKeyboardButton("🔘 ВКЛ/ВЫКЛ WORK", callback_data="admin:work"),
-        ],
-    ]
-    return InlineKeyboardMarkup(rows)
-
-
 SUPPORT_LINK = f"https://t.me/{SUPPORT_USERNAME}"
 
 # Лимит длины одного сообщения в Telegram
@@ -804,17 +803,11 @@ def _main_keyboard() -> ReplyKeyboardMarkup:
 
 def _welcome_text() -> str:
     return (
-        "🔐 <b>FAST MAX BOT</b>
-
-"
-        "Сдача номеров MAX нерегов!
-
-"
-        "━━━━━━━━━━━━━━
-"
+        "🔐 <b>FAST MAX BOT</b>\n\n"
+        "Сдача номеров MAX нерегов!\n\n"
+        "━━━━━━━━━━━━━━\n"
         "👇 <b>Выберите действие:</b>"
     )
-
 
 
 async def _welcome_caption_html(user_id: int) -> str:
@@ -835,15 +828,10 @@ async def _welcome_caption_html(user_id: int) -> str:
 
     return (
         _welcome_text()
-        + f"
-
-💰 <b>Баланс:</b> ${usd:.2f} USD"
-        + f"
-📊 <b>Сдано номеров:</b> {numbers}"
-        + f"
-📌 <b>Прайс на сдачу:</b> ${price:.1f}"
+        + f"\n\n💰 <b>Баланс:</b> ${usd:.2f} USD"
+        + f"\n📊 <b>Сдано номеров:</b> {numbers}"
+        + f"\n📌 <b>Прайс на сдачу:</b> ${price:.1f}"
     )
-
 
 
 def _format_usd(cents: int) -> str:
@@ -1110,7 +1098,7 @@ def _help_guide_text() -> str:
 
 
 def _menu_inline_kb(show_admin: bool = False) -> InlineKeyboardMarkup:
-    """Новое меню."""
+    """Главное меню."""
     rows = [
         [
             InlineKeyboardButton("📱 По номеру", callback_data="menu:phone"),
@@ -1131,7 +1119,6 @@ def _menu_inline_kb(show_admin: bool = False) -> InlineKeyboardMarkup:
         ])
 
     return InlineKeyboardMarkup(rows)
-
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -3735,40 +3722,22 @@ async def handle_admin_inline_callbacks(update: Update, context: ContextTypes.DE
     sub = data.split(":", 1)[1]
 
     if sub == "stats":
-        await query.edit_message_text(
-            "📊 Статистика бота",
-            reply_markup=_admin_panel_kb(),
-        )
+        await query.edit_message_text("📊 Статистика", reply_markup=_admin_panel_kb())
 
     elif sub == "users":
-        await query.edit_message_text(
-            "👥 Пользователи",
-            reply_markup=_admin_panel_kb(),
-        )
+        await query.edit_message_text("👥 Пользователи", reply_markup=_admin_panel_kb())
 
     elif sub == "proxies":
-        await query.edit_message_text(
-            "🔌 Прокси",
-            reply_markup=_admin_panel_kb(),
-        )
+        await query.edit_message_text("🔌 Прокси", reply_markup=_admin_panel_kb())
 
     elif sub == "price":
-        await query.edit_message_text(
-            "💵 Настройка прайса",
-            reply_markup=_admin_panel_kb(),
-        )
+        await query.edit_message_text("💵 Прайс", reply_markup=_admin_panel_kb())
 
     elif sub == "broadcast":
-        await query.edit_message_text(
-            "📢 Рассылка",
-            reply_markup=_admin_panel_kb(),
-        )
+        await query.edit_message_text("📢 Рассылка", reply_markup=_admin_panel_kb())
 
     elif sub == "settings":
-        await query.edit_message_text(
-            "⚙️ Настройки",
-            reply_markup=_admin_panel_kb(),
-        )
+        await query.edit_message_text("⚙️ Настройки", reply_markup=_admin_panel_kb())
 
     elif sub == "work":
         global WORK_MODE
